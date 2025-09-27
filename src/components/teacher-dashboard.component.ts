@@ -16,38 +16,38 @@ import { DataService, Diem, LopTinChi, MonHoc } from '../student.service';
       <div>
           <div class="flex justify-between items-center mb-6">
             <div>
-              <h2 class="text-3xl font-bold text-white">Quản lý Điểm</h2>
-              <p class="text-slate-400 mt-1">Lớp: {{selectedLop.monHoc?.tenMonHoc}} ({{selectedLop.maLop}})</p>
+              <h2 class="text-3xl font-bold text-slate-900 dark:text-white">Quản lý Điểm</h2>
+              <p class="text-slate-500 dark:text-slate-400 mt-1">Lớp: {{selectedLop.monHoc?.tenMonHoc}} ({{selectedLop.maLop}})</p>
             </div>
-            <button (click)="backToClasses()" class="bg-slate-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-slate-500 transition-colors duration-200">
+            <button (click)="backToClasses()" class="bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-white font-semibold py-2 px-4 rounded-md hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors duration-200">
                 &larr; Quay lại Danh sách Lớp
             </button>
         </div>
         <form [formGroup]="gradesForm" (ngSubmit)="saveGrades()">
-          <div class="bg-slate-800 rounded-lg shadow-lg overflow-hidden border border-slate-700">
+          <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg overflow-hidden border border-slate-200 dark:border-slate-700">
               <table class="min-w-full">
-                    <thead class="bg-slate-700/50">
+                    <thead class="bg-slate-50 dark:bg-slate-700/50">
                       <tr>
-                        <th class="py-3 px-6 text-left text-sm font-semibold text-slate-200 uppercase tracking-wider">Mã Sinh viên</th>
-                        <th class="py-3 px-6 text-left text-sm font-semibold text-slate-200 uppercase tracking-wider">Tên Sinh viên</th>
-                        <th class="py-3 px-6 text-left text-sm font-semibold text-slate-200 uppercase tracking-wider w-32">Điểm Giữa kỳ</th>
-                        <th class="py-3 px-6 text-left text-sm font-semibold text-slate-200 uppercase tracking-wider w-32">Điểm Cuối kỳ</th>
-                        <th class="py-3 px-6 text-left text-sm font-semibold text-slate-200 uppercase tracking-wider w-32">Điểm Tổng kết</th>
+                        <th class="py-3 px-6 text-left text-sm font-semibold text-slate-600 dark:text-slate-200 uppercase tracking-wider">Mã Sinh viên</th>
+                        <th class="py-3 px-6 text-left text-sm font-semibold text-slate-600 dark:text-slate-200 uppercase tracking-wider">Tên Sinh viên</th>
+                        <th class="py-3 px-6 text-left text-sm font-semibold text-slate-600 dark:text-slate-200 uppercase tracking-wider w-32">Điểm Giữa kỳ</th>
+                        <th class="py-3 px-6 text-left text-sm font-semibold text-slate-600 dark:text-slate-200 uppercase tracking-wider w-32">Điểm Cuối kỳ</th>
+                        <th class="py-3 px-6 text-left text-sm font-semibold text-slate-600 dark:text-slate-200 uppercase tracking-wider w-32">Điểm Tổng kết</th>
                       </tr>
                   </thead>
-                  <tbody class="divide-y divide-slate-700" formArrayName="grades">
+                  <tbody class="divide-y divide-slate-200 dark:divide-slate-700" formArrayName="grades">
                     @for (student of studentsInSelectedClass(); track student.maSinhVien; let i = $index) {
-                      <tr class="hover:bg-slate-700/40" [formGroupName]="i">
-                        <td class="py-4 px-6 font-mono text-sm text-white">{{student.maSinhVien}}</td>
-                        <td class="py-4 px-6 text-white">{{student.hoTen}}</td>
+                      <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40" [formGroupName]="i">
+                        <td class="py-4 px-6 font-mono text-sm text-slate-800 dark:text-white">{{student.maSinhVien}}</td>
+                        <td class="py-4 px-6 text-slate-800 dark:text-white">{{student.hoTen}}</td>
                         <td class="py-4 px-6">
-                          <input type="number" formControlName="diem1" class="w-24 bg-slate-700 border border-slate-600 rounded-md py-1 px-2 text-white focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                          <input type="number" formControlName="diem1" class="w-24 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md py-1 px-2 text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500 focus:outline-none">
                         </td>
                         <td class="py-4 px-6">
-                            <input type="number" formControlName="diem2" class="w-24 bg-slate-700 border border-slate-600 rounded-md py-1 px-2 text-white focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                            <input type="number" formControlName="diem2" class="w-24 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md py-1 px-2 text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500 focus:outline-none">
                         </td>
                         <td class="py-4 px-6">
-                            <input type="number" formControlName="diemTong" class="w-24 bg-slate-900 border border-slate-700 rounded-md py-1 px-2 text-white focus:ring-1 focus:ring-indigo-500 focus:outline-none" readonly>
+                            <input type="number" formControlName="diemTong" class="w-24 bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-2 text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500 focus:outline-none" readonly>
                         </td>
                       </tr>
                     }
@@ -62,24 +62,24 @@ import { DataService, Diem, LopTinChi, MonHoc } from '../student.service';
         </form>
       </div>
     } @else {
-      <h2 class="text-3xl font-bold mb-6 text-white">Các lớp được phân công</h2>
-      <div class="bg-slate-800 rounded-lg shadow-lg overflow-hidden border border-slate-700">
+      <h2 class="text-3xl font-bold mb-6 text-slate-900 dark:text-white">Các lớp được phân công</h2>
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg overflow-hidden border border-slate-200 dark:border-slate-700">
           <table class="min-w-full">
-              <thead class="bg-slate-700/50">
+              <thead class="bg-slate-50 dark:bg-slate-700/50">
                   <tr>
-                      <th class="py-3 px-6 text-left text-sm font-semibold text-slate-200 uppercase tracking-wider">Mã Lớp</th>
-                      <th class="py-3 px-6 text-left text-sm font-semibold text-slate-200 uppercase tracking-wider">Môn học</th>
-                      <th class="py-3 px-6 text-left text-sm font-semibold text-slate-200 uppercase tracking-wider">Học kỳ</th>
-                      <th class="py-3 px-6 text-left text-sm font-semibold text-slate-200 uppercase tracking-wider">Năm học</th>
+                      <th class="py-3 px-6 text-left text-sm font-semibold text-slate-600 dark:text-slate-200 uppercase tracking-wider">Mã Lớp</th>
+                      <th class="py-3 px-6 text-left text-sm font-semibold text-slate-600 dark:text-slate-200 uppercase tracking-wider">Môn học</th>
+                      <th class="py-3 px-6 text-left text-sm font-semibold text-slate-600 dark:text-slate-200 uppercase tracking-wider">Học kỳ</th>
+                      <th class="py-3 px-6 text-left text-sm font-semibold text-slate-600 dark:text-slate-200 uppercase tracking-wider">Năm học</th>
                   </tr>
               </thead>
-              <tbody class="divide-y divide-slate-700">
+              <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                   @for(lop of teacherClasses(); track lop.maLop) {
-                      <tr (click)="selectClass(lop)" class="hover:bg-slate-700/40 transition-colors duration-200 cursor-pointer">
-                          <td class="py-4 px-6 text-white">{{lop.maLop}}</td>
-                          <td class="py-4 px-6 text-white">{{lop.monHoc?.tenMonHoc}}</td>
-                          <td class="py-4 px-6 text-white">{{lop.hocKy}}</td>
-                          <td class="py-4 px-6 text-white">{{lop.namHoc}}</td>
+                      <tr (click)="selectClass(lop)" class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors duration-200 cursor-pointer">
+                          <td class="py-4 px-6 text-slate-800 dark:text-white">{{lop.maLop}}</td>
+                          <td class="py-4 px-6 text-slate-800 dark:text-white">{{lop.monHoc?.tenMonHoc}}</td>
+                          <td class="py-4 px-6 text-slate-800 dark:text-white">{{lop.hocKy}}</td>
+                          <td class="py-4 px-6 text-slate-800 dark:text-white">{{lop.namHoc}}</td>
                       </tr>
                   }
               </tbody>

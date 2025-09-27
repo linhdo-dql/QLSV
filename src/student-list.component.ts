@@ -13,6 +13,7 @@ import { AdminClassManagementComponent } from './components/admin-class-manageme
 import { CreditClassManagementComponent } from './components/credit-class-management.component';
 import { StudentManagementComponent } from './components/student-management.component';
 import { TeacherDashboardComponent } from './components/teacher-dashboard.component';
+import { ThemeToggleComponent } from './components/theme-toggle.component';
 
 type View = 'dashboard' | 'khoa' | 'monHoc' | 'lopHanhChinh' | 'giaoVien' | 'lopTinChi' | 'sinhvien';
 
@@ -26,7 +27,8 @@ type View = 'dashboard' | 'khoa' | 'monHoc' | 'lopHanhChinh' | 'giaoVien' | 'lop
     AdminClassManagementComponent,
     CreditClassManagementComponent,
     StudentManagementComponent,
-    TeacherDashboardComponent
+    TeacherDashboardComponent,
+    ThemeToggleComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './student-list.component.html',
