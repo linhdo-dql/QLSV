@@ -42,7 +42,7 @@ import { DataService, LopHanhChinh } from '../student.service';
                 <button (click)="openLopHanhChinhModal(lhc)" class="text-slate-400 hover:text-indigo-400 transition-colors duration-200">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
                 </button>
-                <button (click)="deleteLopHanhChinh(lhc.maLop)" class="text-slate-400 hover:text-rose-500 transition-colors duration-200">
+                <button (click)="openDeleteConfirm(lhc)" class="text-slate-400 hover:text-rose-500 transition-colors duration-200">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
                 </button>
               </div>
@@ -93,6 +93,24 @@ import { DataService, LopHanhChinh } from '../student.service';
         </div>
     </div>
     }
+
+     <!-- Delete Confirmation Modal -->
+    @if (isDeleteConfirmOpen()) {
+      <div class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-md border border-slate-700">
+          <h3 class="text-xl font-semibold text-white">Xác nhận Xóa</h3>
+          <p class="mt-4 text-slate-300">
+            Bạn có chắc chắn muốn xóa lớp <strong>{{ classToDelete()?.tenLop }}</strong>? 
+            <br>
+            Hành động này không thể hoàn tác.
+          </p>
+          <div class="mt-8 flex justify-end gap-4">
+            <button type="button" (click)="isDeleteConfirmOpen.set(false)" class="bg-slate-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-slate-500 transition-colors duration-200">Hủy</button>
+            <button type="button" (click)="confirmDelete()" class="bg-rose-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-rose-700 transition-colors duration-200">Xóa</button>
+          </div>
+        </div>
+      </div>
+    }
   `
 })
 export class AdminClassManagementComponent {
@@ -120,6 +138,10 @@ export class AdminClassManagementComponent {
         maGiaoVien: ['', Validators.required],
     });
 
+    // Delete confirmation state
+    isDeleteConfirmOpen = signal(false);
+    classToDelete = signal<LopHanhChinh | null>(null);
+
     openLopHanhChinhModal(lopHanhChinh: (LopHanhChinh & { tenKhoa: string, tenGiaoVien: string }) | null): void {
         if (lopHanhChinh) {
             const { tenKhoa, tenGiaoVien, ...formData } = lopHanhChinh;
@@ -145,9 +167,17 @@ export class AdminClassManagementComponent {
         this.isLopHanhChinhModalOpen.set(false);
     }
 
-    deleteLopHanhChinh(maLop: string): void {
-        if (confirm(`Bạn có chắc muốn xóa lớp hành chính có mã ${maLop}?`)) {
-            this.dataService.deleteLopHanhChinh(maLop);
-        }
+    openDeleteConfirm(lhc: LopHanhChinh): void {
+      this.classToDelete.set(lhc);
+      this.isDeleteConfirmOpen.set(true);
+    }
+
+    confirmDelete(): void {
+      const lhc = this.classToDelete();
+      if (lhc) {
+        this.dataService.deleteLopHanhChinh(lhc.maLop);
+      }
+      this.isDeleteConfirmOpen.set(false);
+      this.classToDelete.set(null);
     }
 }
