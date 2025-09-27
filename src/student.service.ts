@@ -33,6 +33,7 @@ export interface SinhVien { // Student
   email: string;
   soDienThoai: string;
   maLopHanhChinh: string;
+  avatarUrl: string;
 }
 
 export interface MonHoc { // Subject
@@ -93,9 +94,9 @@ const MOCK_LOPHANHCHINH: LopHanhChinh[] = [
 ];
 
 const MOCK_SINHVIEN: SinhVien[] = [
-    { maSinhVien: 'SV001', hoTen: 'Hoàng Văn An', gioiTinh: 'Nam', ngaySinh: '2003-05-10', email: 'an.hv@email.com', soDienThoai: '0987654321', maLopHanhChinh: 'LHC-CNTT-01' },
-    { maSinhVien: 'SV002', hoTen: 'Đỗ Thị Bình', gioiTinh: 'Nữ', ngaySinh: '2003-08-15', email: 'binh.dt@email.com', soDienThoai: '0912345678', maLopHanhChinh: 'LHC-CNTT-01' },
-    { maSinhVien: 'SV003', hoTen: 'Vũ Minh Tuấn', gioiTinh: 'Nam', ngaySinh: '2003-01-20', email: 'tuan.vm@email.com', soDienThoai: '0905112233', maLopHanhChinh: 'LHC-KT-01' },
+    { maSinhVien: 'SV001', hoTen: 'Hoàng Văn An', gioiTinh: 'Nam', ngaySinh: '2003-05-10', email: 'an.hv@email.com', soDienThoai: '0987654321', maLopHanhChinh: 'LHC-CNTT-01', avatarUrl: 'https://picsum.photos/seed/SV001/200' },
+    { maSinhVien: 'SV002', hoTen: 'Đỗ Thị Bình', gioiTinh: 'Nữ', ngaySinh: '2003-08-15', email: 'binh.dt@email.com', soDienThoai: '0912345678', maLopHanhChinh: 'LHC-CNTT-01', avatarUrl: 'https://picsum.photos/seed/SV002/200' },
+    { maSinhVien: 'SV003', hoTen: 'Vũ Minh Tuấn', gioiTinh: 'Nam', ngaySinh: '2003-01-20', email: 'tuan.vm@email.com', soDienThoai: '0905112233', maLopHanhChinh: 'LHC-KT-01', avatarUrl: 'https://picsum.photos/seed/SV003/200' },
 ];
 
 const MOCK_LOPTINCHI: LopTinChi[] = [
@@ -114,6 +115,7 @@ const MOCK_LOPDANGKY: LopDangKy[] = [
 const MOCK_DIEM: Diem[] = [
     { maSinhVien: 'SV001', maLopTinChi: 'LTC-CS101-01', diem1: 8, diem2: 7.5, diemTong: 7.65 },
     { maSinhVien: 'SV002', maLopTinChi: 'LTC-CS101-01', diem1: 9, diem2: 8.5, diemTong: 8.65 },
+    { maSinhVien: 'SV003', maLopTinChi: 'LTC-ECO101-01', diem1: 7, diem2: 8, diemTong: 7.7 },
 ];
 
 
@@ -220,11 +222,12 @@ export class DataService {
   }
 
   // SinhVien
-   addStudent(student: Omit<SinhVien, 'maSinhVien'>) {
+   addStudent(student: Omit<SinhVien, 'maSinhVien' | 'avatarUrl'>) {
     const newId = `SV${(this.sinhViens().length + 1).toString().padStart(3, '0')}`;
+    const avatarUrl = `https://picsum.photos/seed/${newId}/200`;
     this.sinhViensSignal.update(students => [
       ...students,
-      { ...student, maSinhVien: newId }
+      { ...student, maSinhVien: newId, avatarUrl }
     ]);
   }
 

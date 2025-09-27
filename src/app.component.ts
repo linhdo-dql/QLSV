@@ -8,7 +8,6 @@ import { DashboardComponent } from './student-list.component';
 
 @Component({
   selector: 'app-root',
-  // Fix: Use inline template to avoid dependency on a missing file and define component structure
   template: `
     @if (!userRole()) {
       <app-login (loginSuccess)="onLoginSuccess($event)"></app-login>
