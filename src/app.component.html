@@ -1,0 +1,5 @@
+@if (userRole()) {
+  <app-dashboard [role]="userRole()!"></app-dashboard>
+} @else {
+  <app-login (loginSuccess)="onLoginSuccess($event)"></app-login>
+}

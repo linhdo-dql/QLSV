@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Student Management App",
+  "description": "An Angular app for managing students, with an AI-powered feature using the Gemini API.",
+  "requestFramePermissions": []
+}

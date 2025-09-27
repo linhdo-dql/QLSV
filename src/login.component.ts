@@ -1,0 +1,71 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+*/
+import { ChangeDetectionStrategy, Component, output } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+export type UserRole = 'admin' | 'teacher';
+
+@Component({
+  selector: 'app-login',
+  imports: [FormsModule],
+  // FIX: Corrected typo from `Change.OnPush` to `ChangeDetectionStrategy.OnPush`.
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="flex items-center justify-center min-h-screen p-4 bg-slate-900">
+      <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl p-8 w-full max-w-md border border-slate-700 transform transition-all duration-500 hover:scale-105">
+        <h1 class="text-3xl font-bold text-white text-center mb-2">University Portal</h1>
+        <p class="text-center text-slate-300 mb-8">Please sign in to continue</p>
+        <form #loginForm="ngForm" (ngSubmit)="login()">
+          <div class="space-y-4">
+            <div>
+              <label for="username" class="block text-sm font-medium text-slate-300">Username</label>
+              <input 
+                id="username" 
+                name="username" 
+                type="text" 
+                class="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md shadow-sm placeholder-slate-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Enter any username"
+              >
+            </div>
+            <div>
+              <label for="password" class="block text-sm font-medium text-slate-300">Password</label>
+              <input 
+                id="password" 
+                name="password" 
+                type="password" 
+                class="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md shadow-sm placeholder-slate-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Enter any password"
+              >
+            </div>
+             <div>
+              <label for="role" class="block text-sm font-medium text-slate-300">Sign in as</label>
+              <select 
+                id="role" 
+                name="role"
+                [(ngModel)]="selectedRole"
+                class="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option class="bg-slate-700 text-white" value="admin">Admin</option>
+                <option class="bg-slate-700 text-white" value="teacher">Teacher</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="mt-8 w-full bg-indigo-600 text-white py-2.5 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-indigo-500 transition-all duration-300 font-semibold">
+            Sign In
+          </button>
+        </form>
+      </div>
+    </div>
+  `,
+})
+export class LoginComponent {
+  loginSuccess = output<UserRole>();
+  selectedRole: UserRole = 'admin';
+
+  login(): void {
+    // In a real app, you'd validate credentials. Here we just simulate success.
+    this.loginSuccess.emit(this.selectedRole);
+  }
+}
