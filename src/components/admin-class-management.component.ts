@@ -60,6 +60,9 @@ import { DataService, LopHanhChinh } from '../student.service';
                   <button (click)="openLopHanhChinhModal(lhc)" class="text-slate-500 dark:text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors duration-200">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
                   </button>
+                  <button (click)="openStudentListModal(lhc)" class="text-blue-600 hover:text-blue-800 transition-colors duration-200" title="Xem danh sách sinh viên">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-4a4 4 0 11-8 0 4 4 0 018 0zm6 4v2a2 2 0 01-2 2H7a2 2 0 01-2-2v-2a6 6 0 0112 0z" /></svg>
+                  </button>
                   <button (click)="openDeleteConfirm(lhc)" class="text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-500 transition-colors duration-200">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
                   </button>
@@ -70,6 +73,46 @@ import { DataService, LopHanhChinh } from '../student.service';
         </tbody>
       </table>
     </div>
+
+    <!-- Student List Modal -->
+    @if (isStudentListModalOpen()) {
+      <div class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-2xl border border-slate-200 dark:border-slate-700">
+          <h3 class="text-xl font-semibold mb-6 text-slate-900 dark:text-white">Danh sách sinh viên lớp {{ selectedLopHanhChinhForStudents()?.tenLop }}</h3>
+          <div class="overflow-x-auto">
+            <table class="min-w-full">
+              <thead class="bg-slate-50 dark:bg-slate-700/50">
+                <tr>
+                  <th class="py-2 px-4 text-left text-sm font-semibold text-slate-600 dark:text-slate-200">Mã SV</th>
+                  <th class="py-2 px-4 text-left text-sm font-semibold text-slate-600 dark:text-slate-200">Họ tên</th>
+                  <th class="py-2 px-4 text-left text-sm font-semibold text-slate-600 dark:text-slate-200">Email</th>
+                  <th class="py-2 px-4 text-left text-sm font-semibold text-slate-600 dark:text-slate-200">Giới tính</th>
+                  <th class="py-2 px-4 text-left text-sm font-semibold text-slate-600 dark:text-slate-200">Ngày sinh</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                @for (sv of studentsOfSelectedClass(); track sv.maSinhVien) {
+                  <tr>
+                    <td class="py-2 px-4 font-mono">{{ sv.maSinhVien }}</td>
+                    <td class="py-2 px-4">{{ sv.hoTen }}</td>
+                    <td class="py-2 px-4">{{ sv.email }}</td>
+                    <td class="py-2 px-4">{{ sv.gioiTinh }}</td>
+                    <td class="py-2 px-4">{{ sv.ngaySinh }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="text-center py-4 text-slate-500">Không có sinh viên nào.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="mt-6 flex justify-end">
+            <button (click)="isStudentListModalOpen.set(false)" class="bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-white font-semibold py-2 px-4 rounded-md hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors duration-200">Đóng</button>
+          </div>
+        </div>
+      </div>
+    }
 
     <!-- LopHanhChinh Modal -->
     @if (isLopHanhChinhModalOpen()) {
@@ -147,6 +190,11 @@ export class AdminClassManagementComponent {
   editingLopHanhChinh = signal<LopHanhChinh | null>(null);
   isDeleteConfirmOpen = signal(false);
   classToDelete = signal<LopHanhChinh | null>(null);
+
+  // Modal xem danh sách sinh viên của lớp hành chính
+  isStudentListModalOpen = signal(false);
+  selectedLopHanhChinhForStudents = signal<any|null>(null);
+  studentsOfSelectedClass = signal<any[]>([]);
 
   // Computed
   filteredLopHanhChinhs = computed(() => {
@@ -261,6 +309,14 @@ export class AdminClassManagementComponent {
         this.isLopHanhChinhModalOpen.set(false);
       });
     }
+  }
+
+  openStudentListModal(lhc: any) {
+    this.selectedLopHanhChinhForStudents.set(lhc);
+    this.isStudentListModalOpen.set(true);
+    this.dataService.getSinhViens().subscribe(svs => {
+      this.studentsOfSelectedClass.set(svs.filter(sv => sv.maLopHanhChinh === lhc.maLop));
+    });
   }
 
   openDeleteConfirm(lhc: LopHanhChinh): void {
