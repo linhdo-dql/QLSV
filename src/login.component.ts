@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
-*/
 import { ChangeDetectionStrategy, Component, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 

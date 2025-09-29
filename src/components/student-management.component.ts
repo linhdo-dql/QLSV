@@ -1,8 +1,5 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
-*/
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import * as XLSX from 'xlsx';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DataService, SinhVien } from '../student.service';
 
@@ -12,12 +9,33 @@ import { DataService, SinhVien } from '../student.service';
   imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
       <h2 class="text-3xl font-bold text-slate-900 dark:text-white">Quản lý Sinh viên</h2>
-      <button (click)="openStudentModal(null)" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors duration-200 flex items-center gap-2">
+  <div class="flex flex-col md:flex-row gap-2 md:items-center">
+        <input type="text" placeholder="Tìm kiếm sinh viên..." [value]="studentSearchText()" (input)="studentSearchText.set($event.target.value)" class="border border-slate-300 dark:border-slate-600 rounded-md py-2 px-3 text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none w-64" />
+        <select [value]="selectedLopHanhChinh()" (change)="selectedLopHanhChinh.set($event.target.value)" class="border border-slate-300 dark:border-slate-600 rounded-md py-2 px-3 text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700">
+          <option value="">Tất cả lớp</option>
+          @for (lop of lopHanhChinhs(); track lop.maLop) {
+            <option [value]="lop.maLop">{{ lop.tenLop }}</option>
+          }
+        </select>
+        <select [value]="selectedGioiTinh()" (change)="selectedGioiTinh.set($event.target.value)" class="border border-slate-300 dark:border-slate-600 rounded-md py-2 px-3 text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700">
+          <option value="">Tất cả giới tính</option>
+          <option value="Nam">Nam</option>
+          <option value="Nữ">Nữ</option>
+          <option value="Khác">Khác</option>
+        </select>
+        <button (click)="exportToExcel()" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-green-700 transition-colors duration-200 flex items-center gap-2">
+           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Xuất Excel
+        </button>
+        <button (click)="openStudentModal(null)" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors duration-200 flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
-        Thêm Sinh viên
-      </button>
+          Thêm Sinh viên
+        </button>
+      </div>
     </div>
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg overflow-hidden border border-slate-200 dark:border-slate-700">
       <table class="min-w-full">
@@ -31,28 +49,28 @@ import { DataService, SinhVien } from '../student.service';
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-          @for (sv of studentsWithDetails(); track sv.maSinhVien) {
-          <tr (click)="openStudentDetailsModal(sv)" class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors duration-200 cursor-pointer">
-            <td class="py-3 px-6 text-slate-800 dark:text-white">
-              <div class="flex items-center gap-4">
-                <img [src]="sv.avatarUrl" alt="Student Avatar" class="h-10 w-10 rounded-full object-cover">
-                <span>{{ sv.hoTen }}</span>
-              </div>
-            </td>
-            <td class="py-4 px-6 font-mono text-sm text-slate-700 dark:text-slate-300">{{ sv.maSinhVien }}</td>
-            <td class="py-4 px-6 text-slate-800 dark:text-slate-100">{{ sv.email }}</td>
-            <td class="py-4 px-6 text-slate-800 dark:text-slate-100">{{ sv.tenLopHanhChinh }}</td>
-            <td class="py-4 px-6">
+          @for (sv of filteredStudents(); track sv.maSinhVien) {
+            <tr (click)="openStudentDetailsModal(sv)" class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors duration-200 cursor-pointer">
+              <td class="py-3 px-6 text-slate-800 dark:text-white">
                 <div class="flex items-center gap-4">
-                    <button (click)="$event.stopPropagation(); openStudentModal(sv)" class="text-slate-500 dark:text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors duration-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
-                    </button>
-                    <button (click)="$event.stopPropagation(); openDeleteConfirm(sv)" class="text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-500 transition-colors duration-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
-                    </button>
+                  <img [src]="sv.avatarUrl" alt="Student Avatar" class="h-10 w-10 rounded-full object-cover">
+                  <span>{{ sv.hoTen }}</span>
                 </div>
-            </td>
-          </tr>
+              </td>
+              <td class="py-4 px-6 font-mono text-sm text-slate-700 dark:text-slate-300">{{ sv.maSinhVien }}</td>
+              <td class="py-4 px-6 text-slate-800 dark:text-slate-100">{{ sv.email }}</td>
+              <td class="py-4 px-6 text-slate-800 dark:text-slate-100">{{ sv.tenLopHanhChinh }}</td>
+              <td class="py-4 px-6">
+                  <div class="flex items-center gap-4">
+                      <button (click)="$event.stopPropagation(); openStudentModal(sv)" class="text-slate-500 dark:text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors duration-200">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                      </button>
+                      <button (click)="$event.stopPropagation(); openDeleteConfirm(sv)" class="text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-500 transition-colors duration-200">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                      </button>
+                  </div>
+              </td>
+            </tr>
           }
         </tbody>
       </table>
@@ -130,7 +148,7 @@ import { DataService, SinhVien } from '../student.service';
                     <div class="flex items-center gap-3"><span class="font-semibold text-slate-500 dark:text-slate-400 w-24">Giới tính:</span> <span class="text-slate-800 dark:text-slate-100">{{ student.gioiTinh }}</span></div>
                 </div>
                 <div class="mt-8 flex justify-end gap-4">
-                  <button (click)="isViewingTranscript.set(true)" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors duration-200">Xem Bảng điểm</button>
+                  <button (click)="showTranscript(student)" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors duration-200">Xem Bảng điểm</button>
                   <button (click)="isStudentDetailsModalOpen.set(false)" class="bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-white font-semibold py-2 px-4 rounded-md hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors duration-200">Đóng</button>
                 </div>
               </div>
@@ -198,47 +216,98 @@ export class StudentManagementComponent {
     private readonly dataService = inject(DataService);
     private readonly fb = inject(FormBuilder);
 
-    sinhViens = this.dataService.sinhViens;
-    lopHanhChinhs = this.dataService.lopHanhChinhs;
+  sinhViens = signal<any[]>([]);
+  lopHanhChinhs = signal<any[]>([]);
+
+  ngOnInit() {
+    this.loadSinhViens();
+    this.loadLopHanhChinhs();
+  }
+  private loadSinhViens() {
+    this.dataService.getSinhViens().subscribe(svs => {
+      this.sinhViens.set(svs);
+    });
+  }
+  private loadLopHanhChinhs() {
+    this.dataService.getLopHanhChinhs().subscribe(lhcs => {
+      this.lopHanhChinhs.set(lhcs);
+    });
+  }
 
     // Student Details & Transcript Modal State
     isStudentDetailsModalOpen = signal(false);
     selectedStudentForDetails = signal<(SinhVien & { tenLopHanhChinh: string }) | null>(null);
     isViewingTranscript = signal(false);
 
-    studentTranscript = computed(() => {
-        const selected = this.selectedStudentForDetails();
-        if (!selected) return [];
-
-        const studentGrades = this.dataService.diems().filter(d => d.maSinhVien === selected.maSinhVien);
-        
-        return studentGrades.map(grade => {
-        const lopTinChi = this.dataService.lopTinChis().find(ltc => ltc.maLop === grade.maLopTinChi);
-        const monHoc = this.dataService.monHocs().find(mh => mh.maMonHoc === lopTinChi?.maMonHoc);
-
-        return {
-            maLopTinChi: grade.maLopTinChi,
-            tenMonHoc: monHoc?.tenMonHoc ?? 'Unknown Subject',
-            diem1: grade.diem1,
-            diem2: grade.diem2,
-            diemTong: grade.diemTong,
-        };
+  studentTranscript = signal<any[]>([]);
+  // Gọi hàm này khi mở chi tiết sinh viên
+  loadStudentTranscript(maSinhVien: string) {
+    this.dataService.getDiemBySinhVien(maSinhVien).subscribe(studentGrades => {
+      this.dataService.getLopTinChis().subscribe(lopTinChis => {
+        this.dataService.getMonHocs().subscribe(monHocs => {
+          const transcript = studentGrades.map(grade => {
+            const lopTinChi = lopTinChis.find(ltc => ltc.maLop === grade.maLopTinChi);
+            const monHoc = monHocs.find(mh => mh.maMonHoc === lopTinChi?.maMonHoc);
+            return {
+              maLopTinChi: grade.maLopTinChi,
+              tenMonHoc: monHoc?.tenMonHoc ?? 'Unknown Subject',
+              diem1: grade.diem1,
+              diem2: grade.diem2,
+              diemTong: grade.diemTong,
+            };
+          });
+          this.studentTranscript.set(transcript);
         });
+      });
     });
+  }
 
-    openStudentDetailsModal(student: SinhVien & { tenLopHanhChinh: string }): void {
-        this.selectedStudentForDetails.set(student);
-        this.isViewingTranscript.set(false);
-        this.isStudentDetailsModalOpen.set(true);
+
+  openStudentDetailsModal(student: SinhVien & { tenLopHanhChinh: string }): void {
+    this.selectedStudentForDetails.set(student);
+    this.isViewingTranscript.set(false);
+    this.isStudentDetailsModalOpen.set(true);
+  }
+
+
+
+        // Auto-load transcript when switching to transcript view
+
+    // Hiển thị bảng điểm khi bấm nút
+    showTranscript(student: SinhVien) {
+        this.loadStudentTranscript(student.maSinhVien);
+        this.isViewingTranscript.set(true);
     }
 
 
-    studentsWithDetails = computed(() => {
-        return this.sinhViens().map(sv => {
-            const lopHC = this.lopHanhChinhs().find(l => l.maLop === sv.maLopHanhChinh);
-            return { ...sv, tenLopHanhChinh: lopHC?.tenLop ?? 'N/A' };
-        });
+
+
+  studentSearchText = signal('');
+  selectedLopHanhChinh = signal('');
+  selectedGioiTinh = signal('');
+
+  studentsWithDetails = computed(() => {
+    return this.sinhViens().map(sv => {
+      const lopHC = this.lopHanhChinhs().find(l => l.maLop === sv.maLopHanhChinh);
+      return { ...sv, tenLopHanhChinh: lopHC?.tenLop ?? 'N/A' };
     });
+  });
+
+  filteredStudents = computed(() => {
+    const keyword = this.studentSearchText().toLowerCase().trim();
+    const lop = this.selectedLopHanhChinh();
+    const gioiTinh = this.selectedGioiTinh();
+    return this.studentsWithDetails().filter(sv => {
+      const matchKeyword = !keyword ||
+        sv.hoTen?.toLowerCase().includes(keyword) ||
+        sv.maSinhVien?.toLowerCase().includes(keyword) ||
+        sv.email?.toLowerCase().includes(keyword) ||
+        sv.tenLopHanhChinh?.toLowerCase().includes(keyword);
+      const matchLop = !lop || sv.maLopHanhChinh === lop;
+      const matchGioiTinh = !gioiTinh || sv.gioiTinh === gioiTinh;
+      return matchKeyword && matchLop && matchGioiTinh;
+    });
+  });
 
     isStudentModalOpen = signal(false);
     editingStudent = signal<SinhVien | null>(null);
@@ -256,37 +325,52 @@ export class StudentManagementComponent {
     isDeleteConfirmOpen = signal(false);
     studentToDelete = signal<SinhVien | null>(null);
 
-    openStudentModal(student: (SinhVien & { tenLopHanhChinh: string }) | null): void {
-        if (student) {
-            const { tenLopHanhChinh, avatarUrl, ...formData } = student;
-            this.editingStudent.set(student);
-            this.studentForm.setValue(formData);
-            this.studentForm.controls.maSinhVien.disable();
-        } else {
-            this.editingStudent.set(null);
-            this.studentForm.reset({maSinhVien: '', hoTen: '', gioiTinh: 'Nam', ngaySinh: '', email: '', soDienThoai: '', maLopHanhChinh: ''});
-            this.studentForm.controls.maSinhVien.enable();
-        }
-        this.isStudentModalOpen.set(true);
+  openStudentModal(student: (SinhVien & { tenLopHanhChinh: string }) | null): void {
+    if (student) {
+      const { tenLopHanhChinh, ...raw } = student;
+      // Đảm bảo có avatarUrl khi set editingStudent
+      this.editingStudent.set({ ...raw, avatarUrl: student.avatarUrl });
+      this.studentForm.setValue({
+        maSinhVien: raw.maSinhVien,
+        hoTen: raw.hoTen,
+        gioiTinh: raw.gioiTinh,
+        ngaySinh: raw.ngaySinh,
+        email: raw.email,
+        soDienThoai: raw.soDienThoai,
+        maLopHanhChinh: raw.maLopHanhChinh
+      });
+      this.studentForm.controls.maSinhVien.disable();
+    } else {
+      this.editingStudent.set(null);
+      this.studentForm.reset({maSinhVien: '', hoTen: '', gioiTinh: 'Nam', ngaySinh: '', email: '', soDienThoai: '', maLopHanhChinh: ''});
+      this.studentForm.controls.maSinhVien.enable();
     }
+    this.isStudentModalOpen.set(true);
+  }
     
-    saveStudent(): void {
-        if (this.studentForm.invalid) return;
-        
-        if (this.editingStudent()) {
-            const formValue = this.studentForm.getRawValue();
-            const updatedStudent: SinhVien = {
-                ...formValue,
-                avatarUrl: this.editingStudent()!.avatarUrl, // Preserve avatar
-            };
-            this.dataService.updateStudent(updatedStudent);
-        } else {
-            const formValue = this.studentForm.getRawValue();
-            const { maSinhVien, ...studentData } = formValue;
-            this.dataService.addStudent(studentData as Omit<SinhVien, 'maSinhVien' | 'avatarUrl'>);
-        }
+  saveStudent(): void {
+    if (this.studentForm.invalid) return;
+    const formValue = this.studentForm.getRawValue();
+    const editing = this.editingStudent();
+    if (editing) {
+      const updatedStudent: SinhVien = {
+        ...formValue,
+        avatarUrl: editing.avatarUrl,
+      };
+      // Use id for backend operation (cast to any for id support)
+      const editingAny = editing as any;
+      this.dataService.updateSinhVien(editingAny.id ?? editingAny.maSinhVien, updatedStudent).subscribe(() => {
+        this.loadSinhViens();
         this.isStudentModalOpen.set(false);
+      });
+    } else {
+      const { maSinhVien, ...studentData } = formValue;
+      this.dataService.addSinhVien(studentData as SinhVien).subscribe(() => {
+        this.loadSinhViens();
+        this.isStudentModalOpen.set(false);
+      });
     }
+  }
 
     openDeleteConfirm(student: SinhVien): void {
       this.studentToDelete.set(student);
@@ -296,9 +380,29 @@ export class StudentManagementComponent {
     confirmDelete(): void {
       const student = this.studentToDelete();
       if (student) {
-        this.dataService.deleteStudent(student.maSinhVien);
+        // Use id for backend operation (cast to any for id support)
+        const studentAny = student as any;
+        this.dataService.deleteSinhVien(studentAny.id ?? studentAny.maSinhVien).subscribe(() => {
+            this.loadSinhViens();
+        });
       }
       this.isDeleteConfirmOpen.set(false);
       this.studentToDelete.set(null);
     }
+  exportToExcel() {
+    // Lấy danh sách sinh viên đã lọc
+    const data = this.filteredStudents().map(sv => ({
+      'Họ và Tên': sv.hoTen,
+      'Mã Sinh viên': sv.maSinhVien,
+      'Email': sv.email,
+      'Lớp': sv.tenLopHanhChinh,
+      'Giới tính': sv.gioiTinh,
+      'Ngày sinh': sv.ngaySinh,
+      'Số điện thoại': sv.soDienThoai
+    }));
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(data);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'SinhVien');
+    XLSX.writeFile(wb, 'DanhSachSinhVien.xlsx');
+  }
 }

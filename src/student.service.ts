@@ -2,7 +2,9 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { Injectable, signal } from '@angular/core';
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
 // --- INTERFACES BASED ON DB SCHEMA ---
 
@@ -66,198 +68,165 @@ export interface Diem { // Grade
 }
 
 
-// --- MOCK DATA ---
-
-const MOCK_KHOA: Khoa[] = [
-  { maKhoa: 'CNTT', tenKhoa: 'Công nghệ Thông tin' },
-  { maKhoa: 'KT', tenKhoa: 'Kinh tế' },
-  { maKhoa: 'NN', tenKhoa: 'Ngoại ngữ' },
-];
-
-const MOCK_GIAOVIEN: GiaoVien[] = [
-    { maGiaoVien: 'GV001', hoTen: 'Nguyễn Văn A', maKhoa: 'CNTT' },
-    { maGiaoVien: 'GV002', hoTen: 'Trần Thị B', maKhoa: 'CNTT' },
-    { maGiaoVien: 'GV003', hoTen: 'Lê Văn C', maKhoa: 'KT' },
-    { maGiaoVien: 'GV004', hoTen: 'Phạm Thị D', maKhoa: 'NN' },
-];
-
-const MOCK_MONHOC: MonHoc[] = [
-    { maMonHoc: 'CS101', tenMonHoc: 'Nhập môn Lập trình', soTinChi: 3, maKhoa: 'CNTT' },
-    { maMonHoc: 'CS102', tenMonHoc: 'Cấu trúc Dữ liệu', soTinChi: 4, maKhoa: 'CNTT' },
-    { maMonHoc: 'ECO101', tenMonHoc: 'Kinh tế Vi mô', soTinChi: 3, maKhoa: 'KT' },
-    { maMonHoc: 'ENG101', tenMonHoc: 'Tiếng Anh Cơ bản', soTinChi: 5, maKhoa: 'NN' },
-];
-
-const MOCK_LOPHANHCHINH: LopHanhChinh[] = [
-    { maLop: 'LHC-CNTT-01', tenLop: 'K65-CNTT-A', maKhoa: 'CNTT', maGiaoVien: 'GV001' },
-    { maLop: 'LHC-KT-01', tenLop: 'K65-KT-B', maKhoa: 'KT', maGiaoVien: 'GV003' },
-];
-
-const MOCK_SINHVIEN: SinhVien[] = [
-    { maSinhVien: 'SV001', hoTen: 'Hoàng Văn An', gioiTinh: 'Nam', ngaySinh: '2003-05-10', email: 'an.hv@email.com', soDienThoai: '0987654321', maLopHanhChinh: 'LHC-CNTT-01', avatarUrl: 'https://picsum.photos/seed/SV001/200' },
-    { maSinhVien: 'SV002', hoTen: 'Đỗ Thị Bình', gioiTinh: 'Nữ', ngaySinh: '2003-08-15', email: 'binh.dt@email.com', soDienThoai: '0912345678', maLopHanhChinh: 'LHC-CNTT-01', avatarUrl: 'https://picsum.photos/seed/SV002/200' },
-    { maSinhVien: 'SV003', hoTen: 'Vũ Minh Tuấn', gioiTinh: 'Nam', ngaySinh: '2003-01-20', email: 'tuan.vm@email.com', soDienThoai: '0905112233', maLopHanhChinh: 'LHC-KT-01', avatarUrl: 'https://picsum.photos/seed/SV003/200' },
-];
-
-const MOCK_LOPTINCHI: LopTinChi[] = [
-    { maLop: 'LTC-CS101-01', maMonHoc: 'CS101', maGiaoVien: 'GV001', hocKy: 1, namHoc: '2023-2024' },
-    { maLop: 'LTC-CS102-01', maMonHoc: 'CS102', maGiaoVien: 'GV002', hocKy: 1, namHoc: '2023-2024' },
-    { maLop: 'LTC-ECO101-01', maMonHoc: 'ECO101', maGiaoVien: 'GV003', hocKy: 1, namHoc: '2023-2024' },
-    { maLop: 'LTC-CS101-02', maMonHoc: 'CS101', maGiaoVien: 'GV001', hocKy: 2, namHoc: '2023-2024' },
-];
-
-const MOCK_LOPDANGKY: LopDangKy[] = [
-    { maLopDangKy: 'DK001', maLopTinChi: 'LTC-CS101-01', maLopHanhChinh: 'LHC-CNTT-01' },
-    { maLopDangKy: 'DK002', maLopTinChi: 'LTC-CS102-01', maLopHanhChinh: 'LHC-CNTT-01' },
-    { maLopDangKy: 'DK003', maLopTinChi: 'LTC-ECO101-01', maLopHanhChinh: 'LHC-KT-01' },
-];
-
-const MOCK_DIEM: Diem[] = [
-    { maSinhVien: 'SV001', maLopTinChi: 'LTC-CS101-01', diem1: 8, diem2: 7.5, diemTong: 7.65 },
-    { maSinhVien: 'SV002', maLopTinChi: 'LTC-CS101-01', diem1: 9, diem2: 8.5, diemTong: 8.65 },
-    { maSinhVien: 'SV003', maLopTinChi: 'LTC-ECO101-01', diem1: 7, diem2: 8, diemTong: 7.7 },
-];
 
 
 @Injectable({
   providedIn: 'root',
 })
 export class DataService {
-  // Signals for each data entity
-  private readonly khoasSignal = signal<Khoa[]>(MOCK_KHOA);
-  private readonly giaoViensSignal = signal<GiaoVien[]>(MOCK_GIAOVIEN);
-  private readonly monHocsSignal = signal<MonHoc[]>(MOCK_MONHOC);
-  private readonly lopHanhChinhsSignal = signal<LopHanhChinh[]>(MOCK_LOPHANHCHINH);
-  private readonly sinhViensSignal = signal<SinhVien[]>(MOCK_SINHVIEN);
-  private readonly lopTinChisSignal = signal<LopTinChi[]>(MOCK_LOPTINCHI);
-  private readonly lopDangKysSignal = signal<LopDangKy[]>(MOCK_LOPDANGKY);
-  private readonly diemsSignal = signal<Diem[]>(MOCK_DIEM);
+  private readonly API_URL = 'http://localhost:8080/qlsv/api';
 
-  // Public readonly signals
-  readonly khoas = this.khoasSignal.asReadonly();
-  readonly giaoViens = this.giaoViensSignal.asReadonly();
-  readonly monHocs = this.monHocsSignal.asReadonly();
-  readonly lopHanhChinhs = this.lopHanhChinhsSignal.asReadonly();
-  readonly sinhViens = this.sinhViensSignal.asReadonly();
-  readonly lopTinChis = this.lopTinChisSignal.asReadonly();
-  readonly lopDangKys = this.lopDangKysSignal.asReadonly();
-  readonly diems = this.diemsSignal.asReadonly();
+  constructor(private http: HttpClient) {}
 
-
-  // --- CRUD Methods ---
-  
-  // Khoa
-  addKhoa(khoa: Khoa) {
-    this.khoasSignal.update(khoas => [...khoas, khoa]);
+  // --- KHOA ---
+  getKhoas(): Observable<Khoa[]> {
+    return this.http.get<Khoa[]>(`${this.API_URL}/khoa`);
   }
 
-  updateKhoa(updatedKhoa: Khoa) {
-    this.khoasSignal.update(khoas =>
-      khoas.map(k => (k.maKhoa === updatedKhoa.maKhoa ? updatedKhoa : k))
-    );
+  getKhoaById(id: string): Observable<Khoa> {
+    return this.http.get<Khoa>(`${this.API_URL}/khoa/${id}`);
   }
 
-  deleteKhoa(maKhoa: string) {
-    this.khoasSignal.update(khoas => khoas.filter(k => k.maKhoa !== maKhoa));
+  addKhoa(khoa: Khoa): Observable<Khoa> {
+    return this.http.post<Khoa>(`${this.API_URL}/khoa`, khoa);
+  }
+
+  updateKhoa(id: string, khoa: Khoa): Observable<Khoa> {
+    return this.http.put<Khoa>(`${this.API_URL}/khoa/${id}`, khoa);
+  }
+
+  deleteKhoa(id: string): Observable<any> {
+    return this.http.delete(`${this.API_URL}/khoa/${id}`);
   }
   
-  // MonHoc
-  addMonHoc(monHoc: MonHoc) {
-    this.monHocsSignal.update(monHocs => [...monHocs, monHoc]);
+
+  // --- MON HOC ---
+  getMonHocs(): Observable<MonHoc[]> {
+    return this.http.get<MonHoc[]>(`${this.API_URL}/monhoc`);
+  }
+  getMonHocById(id: string): Observable<MonHoc> {
+    return this.http.get<MonHoc>(`${this.API_URL}/monhoc/${id}`);
+  }
+  addMonHoc(monHoc: MonHoc): Observable<MonHoc> {
+    return this.http.post<MonHoc>(`${this.API_URL}/monhoc`, monHoc);
+  }
+  updateMonHoc(id: string, monHoc: MonHoc): Observable<MonHoc> {
+    return this.http.put<MonHoc>(`${this.API_URL}/monhoc/${id}`, monHoc);
+  }
+  deleteMonHoc(id: string): Observable<any> {
+    return this.http.delete(`${this.API_URL}/monhoc/${id}`);
   }
 
-  updateMonHoc(updatedMonHoc: MonHoc) {
-    this.monHocsSignal.update(monHocs =>
-      monHocs.map(m => (m.maMonHoc === updatedMonHoc.maMonHoc ? updatedMonHoc : m))
-    );
+
+  // --- GIAO VIEN ---
+  getGiaoViens(): Observable<GiaoVien[]> {
+    return this.http.get<GiaoVien[]>(`${this.API_URL}/giaovien`);
+  }
+  getGiaoVienById(id: string): Observable<GiaoVien> {
+    return this.http.get<GiaoVien>(`${this.API_URL}/giaovien/${id}`);
+  }
+  addGiaoVien(giaoVien: GiaoVien): Observable<GiaoVien> {
+    return this.http.post<GiaoVien>(`${this.API_URL}/giaovien`, giaoVien);
+  }
+  updateGiaoVien(id: string, giaoVien: GiaoVien): Observable<GiaoVien> {
+    return this.http.put<GiaoVien>(`${this.API_URL}/giaovien/${id}`, giaoVien);
+  }
+  deleteGiaoVien(id: string): Observable<any> {
+    return this.http.delete(`${this.API_URL}/giaovien/${id}`);
   }
 
-  deleteMonHoc(maMonHoc: string) {
-    this.monHocsSignal.update(monHocs => monHocs.filter(m => m.maMonHoc !== maMonHoc));
+
+  // --- LOP HANH CHINH ---
+  getLopHanhChinhs(): Observable<LopHanhChinh[]> {
+    return this.http.get<LopHanhChinh[]>(`${this.API_URL}/lophanhchinh`);
+  }
+  getLopHanhChinhById(id: string): Observable<LopHanhChinh> {
+    return this.http.get<LopHanhChinh>(`${this.API_URL}/lophanhchinh/${id}`);
+  }
+  addLopHanhChinh(lop: LopHanhChinh): Observable<LopHanhChinh> {
+    return this.http.post<LopHanhChinh>(`${this.API_URL}/lophanhchinh`, lop);
+  }
+  updateLopHanhChinh(id: string, lop: LopHanhChinh): Observable<LopHanhChinh> {
+    return this.http.put<LopHanhChinh>(`${this.API_URL}/lophanhchinh/${id}`, lop);
+  }
+  deleteLopHanhChinh(id: string): Observable<any> {
+    return this.http.delete(`${this.API_URL}/lophanhchinh/${id}`);
   }
 
-  // GiaoVien
-  addGiaoVien(giaoVien: GiaoVien) {
-    this.giaoViensSignal.update(giaoViens => [...giaoViens, giaoVien]);
+
+  // --- LOP TIN CHI ---
+  getLopTinChis(): Observable<LopTinChi[]> {
+    return this.http.get<LopTinChi[]>(`${this.API_URL}/loptinchi`);
+  }
+  getLopTinChiById(id: string): Observable<LopTinChi> {
+    return this.http.get<LopTinChi>(`${this.API_URL}/loptinchi/${id}`);
+  }
+  addLopTinChi(lop: LopTinChi): Observable<LopTinChi> {
+    return this.http.post<LopTinChi>(`${this.API_URL}/loptinchi`, lop);
+  }
+  updateLopTinChi(id: string, lop: LopTinChi): Observable<LopTinChi> {
+    return this.http.put<LopTinChi>(`${this.API_URL}/loptinchi/${id}`, lop);
+  }
+  deleteLopTinChi(id: string): Observable<any> {
+    return this.http.delete(`${this.API_URL}/loptinchi/${id}`);
   }
 
-  updateGiaoVien(updatedGiaoVien: GiaoVien) {
-    this.giaoViensSignal.update(giaoViens =>
-      giaoViens.map(g => (g.maGiaoVien === updatedGiaoVien.maGiaoVien ? updatedGiaoVien : g))
-    );
+
+  // --- SINH VIEN ---
+  getSinhViens(): Observable<SinhVien[]> {
+    return this.http.get<SinhVien[]>(`${this.API_URL}/sinhvien`);
+  }
+  getSinhVienById(id: string): Observable<SinhVien> {
+    return this.http.get<SinhVien>(`${this.API_URL}/sinhvien/${id}`);
+  }
+  addSinhVien(sinhVien: SinhVien): Observable<SinhVien> {
+    return this.http.post<SinhVien>(`${this.API_URL}/sinhvien`, sinhVien);
+  }
+  updateSinhVien(id: string, sinhVien: SinhVien): Observable<SinhVien> {
+    return this.http.put<SinhVien>(`${this.API_URL}/sinhvien/${id}`, sinhVien);
+  }
+  deleteSinhVien(id: string): Observable<any> {
+    return this.http.delete(`${this.API_URL}/sinhvien/${id}`);
   }
 
-  deleteGiaoVien(maGiaoVien: string) {
-    this.giaoViensSignal.update(giaoViens => giaoViens.filter(g => g.maGiaoVien !== maGiaoVien));
+  // --- LOP DANG KY ---
+  getLopDangKys(): Observable<LopDangKy[]> {
+    return this.http.get<LopDangKy[]>(`${this.API_URL}/lopdangky`);
+  }
+  getLopDangKyById(id: string): Observable<LopDangKy> {
+    return this.http.get<LopDangKy>(`${this.API_URL}/lopdangky/${id}`);
+  }
+  addLopDangKy(lop: LopDangKy): Observable<LopDangKy> {
+    return this.http.post<LopDangKy>(`${this.API_URL}/lopdangky`, lop);
+  }
+  updateLopDangKy(id: string, lop: LopDangKy): Observable<LopDangKy> {
+    return this.http.put<LopDangKy>(`${this.API_URL}/lopdangky/${id}`, lop);
+  }
+  deleteLopDangKy(id: string): Observable<any> {
+    return this.http.delete(`${this.API_URL}/lopdangky/${id}`);
   }
 
-  // LopHanhChinh
-  addLopHanhChinh(lopHanhChinh: LopHanhChinh) {
-    this.lopHanhChinhsSignal.update(lops => [...lops, lopHanhChinh]);
+  // --- DIEM ---
+  getDiems(): Observable<Diem[]> {
+    return this.http.get<Diem[]>(`${this.API_URL}/diem`);
   }
-
-  updateLopHanhChinh(updatedLop: LopHanhChinh) {
-    this.lopHanhChinhsSignal.update(lops =>
-      lops.map(l => (l.maLop === updatedLop.maLop ? updatedLop : l))
-    );
+  getDiemById(id: string): Observable<Diem> {
+    return this.http.get<Diem>(`${this.API_URL}/diem/${id}`);
   }
-
-  deleteLopHanhChinh(maLop: string) {
-    this.lopHanhChinhsSignal.update(lops => lops.filter(l => l.maLop !== maLop));
+  addDiem(diem: Diem): Observable<Diem> {
+    return this.http.post<Diem>(`${this.API_URL}/diem`, diem);
   }
-
-  // LopTinChi
-  addLopTinChi(lopTinChi: LopTinChi) {
-    this.lopTinChisSignal.update(lops => [...lops, lopTinChi]);
+  updateDiem(id: string, diem: Diem): Observable<Diem> {
+    return this.http.put<Diem>(`${this.API_URL}/diem/${id}`, diem);
   }
-
-  updateLopTinChi(updatedLop: LopTinChi) {
-    this.lopTinChisSignal.update(lops =>
-      lops.map(l => (l.maLop === updatedLop.maLop ? updatedLop : l))
-    );
+  deleteDiem(id: string): Observable<any> {
+    return this.http.delete(`${this.API_URL}/diem/${id}`);
   }
-
-  deleteLopTinChi(maLop: string) {
-    this.lopTinChisSignal.update(lops => lops.filter(l => l.maLop !== maLop));
-  }
-
-  // SinhVien
-   addStudent(student: Omit<SinhVien, 'maSinhVien' | 'avatarUrl'>) {
-    const newId = `SV${(this.sinhViens().length + 1).toString().padStart(3, '0')}`;
-    const avatarUrl = `https://picsum.photos/seed/${newId}/200`;
-    this.sinhViensSignal.update(students => [
-      ...students,
-      { ...student, maSinhVien: newId, avatarUrl }
-    ]);
-  }
-
-  updateStudent(updatedStudent: SinhVien) {
-    this.sinhViensSignal.update(students =>
-      students.map(s =>
-        s.maSinhVien === updatedStudent.maSinhVien ? updatedStudent : s
-      )
-    );
-  }
-
-  deleteStudent(maSinhVien: string) {
-    this.sinhViensSignal.update(students => students.filter(s => s.maSinhVien !== maSinhVien));
-  }
-
-  // Diem
-  updateDiem(grades: Diem[]) {
-    this.diemsSignal.update(currentDiems => {
-      const updatedDiems = [...currentDiems];
-      grades.forEach(grade => {
-        const index = updatedDiems.findIndex(d => 
-          d.maSinhVien === grade.maSinhVien && d.maLopTinChi === grade.maLopTinChi
-        );
-        if (index > -1) {
-          updatedDiems[index] = grade; // Update existing grade
-        } else {
-          updatedDiems.push(grade); // Add new grade
-        }
-      });
-      return updatedDiems;
-    });
+  /**
+   * Get all grades for a student by maSinhVien
+   * @param maSinhVien Student code
+   */
+  getDiemBySinhVien(maSinhVien: string): Observable<Diem[]> {
+    return this.http.get<Diem[]>(`${this.API_URL}/diem/sinhvien/${maSinhVien}`);
   }
 }

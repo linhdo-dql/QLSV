@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
-*/
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ThemeService } from '../theme.service';
 

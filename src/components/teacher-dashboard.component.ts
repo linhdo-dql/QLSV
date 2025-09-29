@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
-*/
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormArray, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { DataService, Diem, LopTinChi, MonHoc } from '../student.service';
@@ -93,35 +89,51 @@ export class TeacherDashboardComponent {
     private readonly fb = inject(FormBuilder);
 
     // Teacher specific data
-    teacherClasses = computed(() => {
-        // Assuming teacher with maGiaoVien 'GV001' is logged in
-        const teacherId = 'GV001'; 
-        return this.dataService.lopTinChis()
-            .filter(lop => lop.maGiaoVien === teacherId)
-            .map(lop => ({
-                ...lop,
-                monHoc: this.dataService.monHocs().find(m => m.maMonHoc === lop.maMonHoc)
-            }));
+  teacherClasses = signal<any[]>([]);
+  ngOnInit() {
+    this.loadTeacherClasses();
+  }
+  private loadTeacherClasses() {
+    const teacherId = 'GV001';
+    this.dataService.getLopTinChis().subscribe(lopTinChis => {
+      this.dataService.getMonHocs().subscribe(monHocs => {
+        const filtered = lopTinChis
+          .filter(lop => lop.maGiaoVien === teacherId)
+          .map(lop => ({
+            ...lop,
+            monHoc: monHocs.find(m => m.maMonHoc === lop.maMonHoc)
+          }));
+        this.teacherClasses.set(filtered);
+      });
     });
+  }
     
     // Teacher grade management
     selectedLopTinChi = signal<(LopTinChi & { monHoc?: MonHoc }) | null>(null);
 
-    studentsInSelectedClass = computed(() => {
-        const selectedLop = this.selectedLopTinChi();
-        if (!selectedLop) return [];
-        
-        const enrollments = this.dataService.lopDangKys()
-        .filter(dk => dk.maLopTinChi === selectedLop.maLop);
-        
-        const studentIds = new Set(
-            enrollments.map(dk => this.dataService.lopHanhChinhs().find(lhc => lhc.maLop === dk.maLopHanhChinh))
-            .flatMap(lhc => this.dataService.sinhViens().filter(sv => sv.maLopHanhChinh === lhc?.maLop))
+  studentsInSelectedClass = signal<any[]>([]);
+  private loadStudentsInSelectedClass() {
+    const selectedLop = this.selectedLopTinChi();
+    if (!selectedLop) {
+      this.studentsInSelectedClass.set([]);
+      return;
+    }
+    this.dataService.getLopDangKys().subscribe(lopDangKys => {
+      const enrollments = lopDangKys.filter(dk => dk.maLopTinChi === selectedLop.maLop);
+      this.dataService.getLopHanhChinhs().subscribe(lopHanhChinhs => {
+        this.dataService.getSinhViens().subscribe(sinhViens => {
+          const studentIds = new Set(
+            enrollments.map(dk => lopHanhChinhs.find(lhc => lhc.maLop === dk.maLopHanhChinh))
+            .flatMap(lhc => sinhViens.filter(sv => sv.maLopHanhChinh === lhc?.maLop))
             .map(sv => sv.maSinhVien)
-        );
-
-        return this.dataService.sinhViens().filter(sv => studentIds.has(sv.maSinhVien));
+          );
+          this.studentsInSelectedClass.set(
+            sinhViens.filter(sv => studentIds.has(sv.maSinhVien))
+          );
+        });
+      });
     });
+  }
     
     gradesForm = this.fb.group({
         grades: this.fb.array([])
@@ -131,39 +143,47 @@ export class TeacherDashboardComponent {
         return this.gradesForm.get('grades') as FormArray;
     }
   
-    selectClass(lop: LopTinChi & { monHoc?: MonHoc }): void {
-        this.selectedLopTinChi.set(lop);
-        this.buildGradesForm(lop);
-    }
+  selectClass(lop: LopTinChi & { monHoc?: MonHoc }): void {
+    this.selectedLopTinChi.set(lop);
+    this.loadStudentsInSelectedClass();
+    this.buildGradesForm(lop);
+  }
 
-    backToClasses(): void {
-        this.selectedLopTinChi.set(null);
-    }
+  backToClasses(): void {
+    this.selectedLopTinChi.set(null);
+    this.studentsInSelectedClass.set([]);
+  }
 
-    private buildGradesForm(lop: LopTinChi): void {
-        this.gradesArray.clear();
-        this.studentsInSelectedClass().forEach(student => {
-        const diem = this.dataService.diems().find(d => d.maSinhVien === student.maSinhVien && d.maLopTinChi === lop.maLop);
+  private buildGradesForm(lop: LopTinChi): void {
+    this.gradesArray.clear();
+    this.dataService.getDiems().subscribe(diems => {
+      this.studentsInSelectedClass().forEach(student => {
+        const diem = diems.find(d => d.maSinhVien === student.maSinhVien && d.maLopTinChi === lop.maLop);
         this.gradesArray.push(this.fb.group({
-            maSinhVien: [student.maSinhVien],
-            maLopTinChi: [lop.maLop],
-            diem1: [diem?.diem1 ?? null],
-            diem2: [diem?.diem2 ?? null],
-            diemTong: [{value: diem?.diemTong ?? null, disabled: true}]
+          maSinhVien: [student.maSinhVien],
+          maLopTinChi: [lop.maLop],
+          diem1: [diem?.diem1 ?? null],
+          diem2: [diem?.diem2 ?? null],
+          diemTong: [{value: diem?.diemTong ?? null, disabled: true}]
         }));
-        });
-    }
+      });
+    });
+  }
 
-    saveGrades(): void {
-        const gradesToSave: Diem[] = this.gradesArray.value.map((g: any) => ({
-        ...g,
-        diemTong: (Number(g.diem1) || 0) * 0.3 + (Number(g.diem2) || 0) * 0.7
-        }));
-        
-        this.dataService.updateDiem(gradesToSave);
-        
-        // Refresh form with new totals
-        this.buildGradesForm(this.selectedLopTinChi()!);
-        alert('Đã lưu điểm thành công!');
-    }
+  saveGrades(): void {
+    const gradesToSave: Diem[] = this.gradesArray.value.map((g: any) => ({
+      ...g,
+      diemTong: (Number(g.diem1) || 0) * 0.3 + (Number(g.diem2) || 0) * 0.7
+    }));
+    let count = 0;
+    gradesToSave.forEach(grade => {
+      this.dataService.updateDiem(grade.maSinhVien + '-' + grade.maLopTinChi, grade).subscribe(() => {
+        count++;
+        if (count === gradesToSave.length) {
+          this.buildGradesForm(this.selectedLopTinChi()!);
+          alert('Đã lưu điểm thành công!');
+        }
+      });
+    });
+  }
 }

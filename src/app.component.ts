@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
-*/
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { LoginComponent, UserRole } from './login.component';
 import { DashboardComponent } from './student-list.component';

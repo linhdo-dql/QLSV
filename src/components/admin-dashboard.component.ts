@@ -90,11 +90,34 @@ export class AdminDashboardComponent {
   private subjectsChart: any;
 
   // Data signals from service
-  khoas = this.dataService.khoas;
-  monHocs = this.dataService.monHocs;
-  giaoViens = this.dataService.giaoViens;
-  sinhViens = this.dataService.sinhViens;
-  lopHanhChinhs = this.dataService.lopHanhChinhs;
+  khoas = signal<any[]>([]);
+  monHocs = signal<any[]>([]);
+  giaoViens = signal<any[]>([]);
+  sinhViens = signal<any[]>([]);
+  lopHanhChinhs = signal<any[]>([]);
+
+  ngOnInit() {
+    this.loadKhoas();
+    this.loadMonHocs();
+    this.loadGiaoViens();
+    this.loadSinhViens();
+    this.loadLopHanhChinhs();
+  }
+  private loadKhoas() {
+    this.dataService.getKhoas().subscribe(khoas => this.khoas.set(khoas));
+  }
+  private loadMonHocs() {
+    this.dataService.getMonHocs().subscribe(monHocs => this.monHocs.set(monHocs));
+  }
+  private loadGiaoViens() {
+    this.dataService.getGiaoViens().subscribe(giaoViens => this.giaoViens.set(giaoViens));
+  }
+  private loadSinhViens() {
+    this.dataService.getSinhViens().subscribe(sinhViens => this.sinhViens.set(sinhViens));
+  }
+  private loadLopHanhChinhs() {
+    this.dataService.getLopHanhChinhs().subscribe(lopHanhChinhs => this.lopHanhChinhs.set(lopHanhChinhs));
+  }
 
   // Admin dashboard stats
   stats = computed(() => ({
